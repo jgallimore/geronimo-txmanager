@@ -87,18 +87,23 @@ public class TransactionEnlistingInterceptor implements ConnectionInterceptor {
      */
     public void returnConnection(ConnectionInfo connectionInfo,
                                  ConnectionReturnAction connectionReturnAction) {
+        if (log.isTraceEnabled()) {
+            log.trace("Return connection called with connectionInfo " + connectionInfo + " and action " + connectionReturnAction);
+        }
+
         try {
             ManagedConnectionInfo mci = connectionInfo.getManagedConnectionInfo();
             Transaction transaction = TxUtil.getTransactionIfActive(transactionManager);
+            XAResource xares = mci.getXAResource();
+
             if (transaction != null) {
-                XAResource xares = mci.getXAResource();
                 if (log.isTraceEnabled()) {
                     log.trace("Delisting connection " + connectionInfo + " with XAResource " + xares + " in transaction: " + transaction, new Exception("stack trace"));
                 }
                 transaction.delistResource(xares, XAResource.TMSUSPEND);
             } else {
                 if (log.isTraceEnabled()) {
-                    log.trace("not delisting connection " + connectionInfo + " with XAResource " + mci.getXAResource() + " no transaction");
+                    log.trace("not delisting connection " + connectionInfo + " with XAResource " + xares + " no transaction");
                 }
             }
 

@@ -35,12 +35,18 @@ public class WrapperNamedXAResource implements NamedXAResource {
 
     private final XAResource xaResource;
     private final String name;
+    private final long createdAt;
 
     public WrapperNamedXAResource(XAResource xaResource, String name) {
         if (xaResource == null) throw new NullPointerException("No XAResource supplied.  XA support may not be configured properly");
         if (name == null) throw new NullPointerException("No name supplied. Resource adapter not properly configured");
         this.xaResource = xaResource;
         this.name = name;
+        this.createdAt = System.currentTimeMillis();
+
+        if (log.isTraceEnabled()) {
+            log.trace("WrapperNamedXAResource created" + getName() + "\n XAResource " + xaResource);
+        }
     }
 
     public String getName() {
@@ -108,7 +114,20 @@ public class WrapperNamedXAResource implements NamedXAResource {
         if (log.isTraceEnabled()) {
             log.trace("Start called on XAResource " + getName() + "\n Xid: " + xid + "\n flags:" + decodeFlags(flags));
         }
-        xaResource.start(xid, flags);
+
+        try {
+            xaResource.start(xid, flags);
+        } catch (XAException e) {
+            if (log.isTraceEnabled()) {
+                log.trace("Error calling start on XAResource " + getName() +
+                        "\n Xid: " + xid +
+                        "\n flags:" + decodeFlags(flags) +
+                        "\n error: " + e.errorCode + " " + e.getMessage() +
+                        "\n age: " + (System.currentTimeMillis() - createdAt));
+            }
+
+            throw e;
+        }
     }
     private String decodeFlags(int flags) {
         if (flags == 0) {
@@ -134,6 +153,14 @@ public class WrapperNamedXAResource implements NamedXAResource {
             b.append(flagName);
             flags = flags ^ flag;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "WrapperNamedXAResource{" +
+                "xaResource=" + xaResource +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
 

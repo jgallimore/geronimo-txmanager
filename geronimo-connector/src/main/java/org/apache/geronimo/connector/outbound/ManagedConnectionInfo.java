@@ -17,6 +17,11 @@
 
 package org.apache.geronimo.connector.outbound;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 
 import javax.resource.spi.ConnectionRequestInfo;
@@ -34,6 +39,7 @@ import javax.transaction.xa.XAResource;
  * @version 1.0
  */
 public class ManagedConnectionInfo {
+    protected static Logger log = LoggerFactory.getLogger(ManagedConnectionInfo.class.getName());
 
     private ManagedConnectionFactory managedConnectionFactory;
     private ConnectionRequestInfo connectionRequestInfo;
@@ -91,6 +97,13 @@ public class ManagedConnectionInfo {
 
     public void setXAResource(XAResource xares) {
         this.xares = xares;
+
+        if (log.isTraceEnabled()) {
+            final StringWriter sw = new StringWriter();
+            new Throwable("").printStackTrace(new PrintWriter(sw));
+            final String stackTrace = sw.toString();
+            log.trace("XAResource " + (xares == null ? "null" : xares) +  "associated with MCI at: " + stackTrace);
+        }
     }
 
     public long getLastUsed() {

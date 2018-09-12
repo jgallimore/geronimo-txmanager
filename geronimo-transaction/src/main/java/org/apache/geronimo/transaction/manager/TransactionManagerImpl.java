@@ -17,6 +17,8 @@
 
 package org.apache.geronimo.transaction.manager;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -126,6 +128,14 @@ public class TransactionManagerImpl implements TransactionManager, UserTransacti
         Transaction tx = getTransaction();
         if (tx != null) {
             associatedTransactions.remove(tx);
+
+            if (log.isTraceEnabled()) {
+                final StringWriter sw = new StringWriter();
+                new Throwable("").printStackTrace(new PrintWriter(sw));
+                final String stackTrace = sw.toString();
+                log.trace("unassociating tx with thread at: " + stackTrace);
+            }
+
             threadTx.set(null);
             fireThreadUnassociated(tx);
             activeCount.getAndDecrement();
